@@ -1,14 +1,47 @@
 #include "hw4.h"
 
 void initialize_game(ChessGame *game) {
-    (void)game;
+    game->chessboard[0][0] = 'r';
+    game->chessboard[0][1] = 'n';
+    game->chessboard[0][2] = 'b';
+    game->chessboard[0][3] = 'q';
+    game->chessboard[0][4] = 'k';
+    game->chessboard[0][5] = 'b';
+    game->chessboard[0][6] = 'n';
+    game->chessboard[0][7] = 'r';
+
+    game->chessboard[7][0] = 'R';
+    game->chessboard[7][1] = 'N';
+    game->chessboard[7][2] = 'B';
+    game->chessboard[7][3] = 'Q';
+    game->chessboard[7][4] = 'K';
+    game->chessboard[7][5] = 'B';
+    game->chessboard[7][6] = 'N';
+    game->chessboard[7][7] = 'R';
+
+
+    for(int i = 1; i < 7; i++){
+        for (int j = 0; j < 8; j++){
+            if (i == 1)
+                game->chessboard[i][j] = 'p';
+            else if (i == 6)
+                game->chessboard[i][j] = 'P';
+            else if (i > 1 && i < 6){
+                game->chessboard[i][j] = '.';
+            }
+        }
+    }
+
+    game->capturedCount = 0;
+    game->moveCount = 0;
+    game->currentPlayer = WHITE_PLAYER;
 }
 
 void chessboard_to_fen(char fen[], ChessGame *game) {
     (void)fen;
     (void)game;
 }
-
+ 
 bool is_valid_pawn_move(char piece, int src_row, int src_col, int dest_row, int dest_col, ChessGame *game) {
     (void)piece;
     (void)src_row;
