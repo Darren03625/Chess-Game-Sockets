@@ -43,21 +43,36 @@ void chessboard_to_fen(char fen[], ChessGame *game) {
 }
  
 bool is_valid_pawn_move(char piece, int src_row, int src_col, int dest_row, int dest_col, ChessGame *game) {
-    (void)piece;
-    (void)src_row;
-    (void)src_col;
-    (void)dest_row;
-    (void)dest_col;
-    (void)game;
+    if (piece == 'P'){ // white pieces
+        if (src_row == 6 && dest_row == 4 && dest_col == src_col )   // Trying to move 2 places forwards 
+                if (game->chessboard[5][dest_col] == '.' && game->chessboard[4][src_col] == '.') return true;
+        if (dest_row == src_row - 1 && dest_col == src_col)         // General case moving 1 place forward
+            if (game->chessboard[dest_row][dest_col] == '.') return true;
+        if (dest_row == src_row - 1 && (dest_col == src_col + 1 || dest_col == src_col - 1)){
+            if (dest_col == src_col + 1)
+                if (game->chessboard[dest_row][dest_col] != '.') return true;
+            if (dest_col == src_col - 1)
+                if (game->chessboard[dest_row][dest_col] != '.') return true;
+        }
+    }
+
+    if (piece == 'p'){ // black pieces
+        if (src_row == 1 && dest_row == 3 && dest_col == src_col)    // Trying to move 2 places forwards
+            if (game->chessboard[2][dest_col] == '.' && game->chessboard[3][src_col] == '.') return true;
+        if (dest_row == src_row + 1 && dest_col == src_col)         // General case moving 1 place forward
+            if (game->chessboard[dest_row][dest_col] == '.') return true;
+        if (dest_row == src_row + 1 && (dest_col == src_col + 1 || dest_col == src_col - 1)){   // Moving diagonal
+            if (dest_col == src_col + 1)
+                if (game->chessboard[dest_row][dest_col] != '.') return true;
+            if (dest_col == src_col - 1)
+                if (game->chessboard[dest_row][dest_col] != '.') return true;      
+        }
+    }
     return false;
 }
 
 bool is_valid_rook_move(int src_row, int src_col, int dest_row, int dest_col, ChessGame *game) {
-    (void)src_row;
-    (void)src_col;
-    (void)dest_row;
-    (void)dest_col;
-    (void)game;
+    
     return false;
 }
 
