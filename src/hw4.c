@@ -160,13 +160,20 @@ bool is_valid_king_move(int src_row, int src_col, int dest_row, int dest_col) {
 }
 
 bool is_valid_move(char piece, int src_row, int src_col, int dest_row, int dest_col, ChessGame *game) {
-    (void)piece;
-    (void)src_row;
-    (void)src_col;
-    (void)dest_row;
-    (void)dest_col;
-    (void)game;
-    return false;
+    if (piece == 'p' || piece == 'P')
+        return is_valid_pawn_move(piece, src_row, src_col, dest_row, dest_col, game);
+    else if (piece == 'n' || piece == 'N')
+        return is_valid_knight_move(src_row, src_col, dest_row, dest_col);
+    else if (piece == 'r' || piece == 'R')
+        return is_valid_rook_move(src_row, src_col, dest_row, dest_col, game);
+    else if (piece == 'b' || piece == 'B')
+        return is_valid_bishop_move(src_row, src_col, dest_row, dest_col, game);
+    else if (piece == 'q' || piece == 'Q')
+        return is_valid_queen_move(src_row, src_col, dest_row, dest_col, game);
+    else if (piece == 'k' || piece == 'K')
+        return is_valid_king_move(src_row, src_col, dest_row, dest_col);
+    else
+        return false;
 }
 
 void fen_to_chessboard(const char *fen, ChessGame *game) {
@@ -175,9 +182,74 @@ void fen_to_chessboard(const char *fen, ChessGame *game) {
 }
 
 int parse_move(const char *move, ChessMove *parsed_move) {
-    (void)move;
-    (void)parsed_move;
-    return -999;
+    int length = strlen(move);
+
+    if (length < 4 || length > 5){
+        return PARSE_MOVE_INVALID_FORMAT;
+    }
+    //"e1e5q"
+    char copyOfMove[length + 1];
+    strcpy(copyOfMove, move);
+    copyOfMove[length] = '\0';
+    char rowLetter1 = copyOfMove[0];
+    int col1 = copyOfMove[1] - '0';
+    char rowLetter2 = copyOfMove[2];
+    int col2 = copyOfMove[3] - '0';
+    printf("rowLetter1: %c\n", rowLetter1);
+    printf("col1 %d\n", col1);
+    printf("rowLetter2: %c\n", rowLetter2);
+    printf("col2 %d\n", col2);
+    
+
+    if ((rowLetter1 < 'a' || rowLetter1 > 'h') || (rowLetter2 < 'a' || rowLetter2 > 'h')){
+        printf("%d\n", 1);
+        return PARSE_MOVE_INVALID_FORMAT;   
+    }
+    if ((col1 < 1 || col1 > 8) || (col2 < 1 || col2 > 8)){
+        printf("%d\n", 2);
+        return PARSE_MOVE_OUT_OF_BOUNDS;
+    }
+    
+    char promotionType = '\0';
+
+    if (length == 5){
+        promotionType = copyOfMove[4];
+        if (col2 == 8 && col1 < 7){
+            printf("%d\n", 3);
+            return PARSE_MOVE_INVALID_DESTINATION;
+        }
+        else if (col2 == 1 && col1 > 2){
+            printf("%d\n", 4);
+            return PARSE_MOVE_INVALID_DESTINATION;
+        }
+        //e7e81
+        else if ((col2 != 1 && col2 != 8))
+            return PARSE_MOVE_INVALID_DESTINATION;
+
+
+        if (promotionType != 'q' && promotionType != 'r' && promotionType != 'b' && promotionType != 'n'){
+            printf("%d\n", 5);
+            return PARSE_MOVE_INVALID_PROMOTION;
+        }
+    }
+
+    parsed_move->startSquare[0] = rowLetter1;
+    parsed_move->startSquare[1] = col1 + '0';
+    parsed_move->startSquare[2] = '\0';
+
+    parsed_move->endSquare[0] = rowLetter2;
+    parsed_move->endSquare[1] = col2 + '0';
+    
+    if (length == 5){
+        parsed_move->endSquare[2] = promotionType;
+        parsed_move->endSquare[3] = '\0';
+    }
+    else{
+        parsed_move->endSquare[2] = '\0';
+    }
+
+    printf("%d\n", 6);
+    return 0;
 }
 
 int make_move(ChessGame *game, ChessMove *move, bool is_client, bool validate_move) {
