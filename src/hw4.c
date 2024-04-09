@@ -90,7 +90,6 @@ void chessboard_to_fen(char fen[], ChessGame *game) {
     }
 
     fen[counter] = '\0';
-    printf("\n%s\n", fen);
 }
  
 bool is_valid_pawn_move(char piece, int src_row, int src_col, int dest_row, int dest_col, ChessGame *game) {
@@ -258,12 +257,10 @@ void fen_to_chessboard(const char *fen, ChessGame *game) {
         }
     }
 
-    if (fen[strlen(fen) - 1] == 'b'){
+    if (fen[strlen(fen) - 1] == 'b')
         game->currentPlayer = BLACK_PLAYER;
-    }
-    else{
+    else
         game->currentPlayer = WHITE_PLAYER;
-    }
 }
 
 int parse_move(const char *move, ChessMove *parsed_move) {
@@ -395,19 +392,195 @@ int make_move(ChessGame *game, ChessMove *move, bool is_client, bool validate_mo
 
 
 int send_command(ChessGame *game, const char *message, int socketfd, bool is_client) {
-    (void)game;
-    (void)message;
-    (void)socketfd;
-    (void)is_client;
-    return -999;
+
+    char copyMessage[strlen(message) + 1];
+    strncpy(copyMessage, message, strlen(message));
+    copyMessage[strlen(message)] = '\0';
+    int start = 0;
+    int end = 0;
+    
+    char *ptr = copyMessage;
+
+    while (*ptr != '\0' && *ptr != ' '){
+        ptr++;
+        end++;
+    }
+    end--;
+    char command[end - start + 2];
+    spliceString(copyMessage, start, end, command);
+
+    if (strcmp(command, "/forfeit") == 0){
+        if (send(socketfd, message, sizeof(message), is_client)) return COMMAND_FORFEIT;
+    }
+
+    if (strcmp(command, "/chessboard")  == 0){
+        display_chessboard(game);
+        return COMMAND_DISPLAY;
+    }
+
+    if (strcmp(command, "/import") != 0 && strcmp(command, "/move") != 0 && strcmp(command, "/save") != 0&& strcmp(command, "/load") != 0)
+        return COMMAND_UNKNOWN;
+
+    // Rest of the ones have arguments
+
+    end = end + 2;
+    start = end;
+    end = strlen(message) - 1;
+    char argument[end - start + 2];
+    spliceString(copyMessage, start, end, argument);
+
+    if (strcmp(command, "/move") == 0){
+        ChessMove parsed_move;
+        if (parse_move(argument, &parsed_move) == 0)
+            if (make_move(game, &parsed_move, is_client, 1) == 0)
+                return COMMAND_MOVE;
+            else 
+                return COMMAND_ERROR;
+        else
+            return COMMAND_ERROR;
+            
+    }
+
+    if (strcmp(command, "/import") == 0){
+        if (is_client == false){
+            fen_to_chessboard(argument, game);
+            send(socketfd, message, sizeof(message), is_client);
+            return COMMAND_IMPORT;
+        }
+    }
+
+
+    if (strcmp(command, "/save") == 0){
+        if (save_game(game, argument, "./game_database.txt") == 0) 
+            return COMMAND_SAVE;
+        else
+            return COMMAND_ERROR;
+    }
+
+    if (strcmp(command, "/load") == 0){
+        ptr = copyMessage;
+        ptr = ptr + start;
+
+        end = start;
+        
+        while (*ptr != ' '){
+            ptr++;
+            end++;
+        }
+        end--;
+
+        char name[end - start + 2];
+        spliceString(copyMessage, start, end, name);
+
+        end = end + 2;
+        start = end;
+        ptr++;
+        while (*ptr != '\0'){
+            ptr++;
+            end++;
+        }
+
+        char saveString[end - start + 2];
+        spliceString(copyMessage, start, end, saveString);
+
+        int saveNumber = (int)(*saveString) - '0';
+
+
+        if (load_game(game, name, "./game_database.txt", saveNumber) == 0)
+            return COMMAND_LOAD;
+        else
+            return COMMAND_ERROR;
+    }
+
+
+    return COMMAND_UNKNOWN;
 }
 
 int receive_command(ChessGame *game, const char *message, int socketfd, bool is_client) {
-    (void)game;
-    (void)message;
-    (void)socketfd;
-    (void)is_client;
-    return -999;
+    char copyMessage[strlen(message) + 1];
+    strncpy(copyMessage, message, strlen(message));
+    copyMessage[strlen(message)] = '\0';
+    int start = 0;
+    int end = 0;
+    
+    char *ptr = copyMessage;
+
+    while (*ptr != '\0' && *ptr != ' '){
+        ptr++;
+        end++;
+    }
+    end--;
+    char command[end - start + 2];
+    spliceString(copyMessage, start, end, command);
+
+    if (strcmp(command, "/forfeit") == 0){
+        close(socketfd);
+        return COMMAND_FORFEIT;
+    }
+
+    if (strcmp(command, "/move") != 0 && strcmp(command, "/import") != 0 && strcmp(command, "/load") != 0)
+        return -1;
+
+    end = end + 2;
+    start = end;
+    end = strlen(message) - 1;
+    char argument[end - start + 2];
+    spliceString(copyMessage, start, end, argument);
+
+     if (strcmp(command, "/move") == 0){
+        ChessMove parsed_move;
+        if (parse_move(argument, &parsed_move) == 0){
+            make_move(game, &parsed_move, is_client, false);
+            return COMMAND_MOVE;
+        }
+        else
+            return COMMAND_ERROR;
+     }
+
+     if (strcmp(command, "/import") == 0 && is_client == true){
+        fen_to_chessboard(argument, game);
+        return COMMAND_IMPORT;
+     }
+
+     if (strcmp(command, "/load") == 0){
+
+        ptr = copyMessage;
+        ptr = ptr + start;
+
+        end = start;
+        
+        while (*ptr != ' '){
+            ptr++;
+            end++;
+        }
+        end--;
+
+        char name[end - start + 2];
+        spliceString(copyMessage, start, end, name);
+
+        end = end + 2;
+        start = end;
+        ptr++;
+        while (*ptr != '\0'){
+            ptr++;
+            end++;
+        }
+
+        char saveString[end - start + 2];
+        spliceString(copyMessage, start, end, saveString);
+
+        int saveNumber = (int)(*saveString) - '0';
+
+        if (saveNumber < 1)
+            return COMMAND_ERROR;
+
+        if (load_game(game, name, "./game_database.txt", saveNumber) == 0)
+            return COMMAND_LOAD;
+        else
+            return COMMAND_ERROR;
+     }
+
+    return -1;
 }
 
 int save_game(ChessGame *game, const char *username, const char *db_filename) {
@@ -462,7 +635,6 @@ int load_game(ChessGame *game, const char *username, const char *db_filename, in
     }
 
     if (numGamesSaved < save_number){
-        printf("bob");
         return -1;
     }
 
