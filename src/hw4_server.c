@@ -5,6 +5,7 @@ int main() {
     struct sockaddr_in address;
     int opt = 1;
     int addrlen = sizeof(address);
+    char buffer[BUFFER_SIZE] = {0};
 
     // Create socket
     if ((listenfd = socket(AF_INET, SOCK_STREAM, 0)) == 0) {
@@ -45,11 +46,60 @@ int main() {
     }
 
     INFO("Server accepted connection");
+    
+    ChessGame *game = malloc(sizeof(ChessGame));
+    initialize_game(game);
+
 
     while (1) {
-        // Fill this in
+        
+        memset(buffer, 0, BUFFER_SIZE);
+        int nbytes = read(connfd, buffer, BUFFER_SIZE);
+        buffer[strlen(buffer)] = '\0';
+        printf("buffer: %s\n", buffer);
+        if (nbytes <= 0){
+            perror("[Server] read() has failed.");
+            exit(EXIT_FAILURE);
+        }
+
+        printf("[Server] Received from client: %s\n", buffer);
+
+        int value = receive_command(game, buffer, connfd, true);
+        
+        if (value == COMMAND_FORFEIT){
+            printf("[Server] Client chatter quitting...\n");
+            close(connfd);
+            if (game->currentPlayer == WHITE_PLAYER) 
+                game->currentPlayer = BLACK_PLAYER;
+            else 
+                game->currentPlayer = WHITE_PLAYER;
+            break;
+        }
+
+        memset(buffer, 0, BUFFER_SIZE);
+        fgets(buffer, BUFFER_SIZE, stdin);
+        buffer[strlen(buffer) - 1] = '\0';
+        printf("[Server] Message entered: %s\n", buffer);
+
+        value = send_command(game, buffer, connfd, false);
+
+        while (value == COMMAND_ERROR || value == COMMAND_UNKNOWN){
+            memset(buffer, 0, BUFFER_SIZE);
+            fgets(buffer, BUFFER_SIZE, stdin);
+            buffer[strlen(buffer)-1] = '\0';
+            printf("[Server] Message entered: %s", buffer);
+            value = send_command(game, buffer, connfd, false);
+        }
+
+
+        if (value == COMMAND_FORFEIT){
+            printf("[Server] Quitting...\n");
+            close(connfd);
+            break;
+        }
     }
 
     close(listenfd);
+    free(game);
     return 0;
 }

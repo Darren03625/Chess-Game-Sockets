@@ -392,7 +392,7 @@ int make_move(ChessGame *game, ChessMove *move, bool is_client, bool validate_mo
 
 
 int send_command(ChessGame *game, const char *message, int socketfd, bool is_client) {
-
+   
     char copyMessage[strlen(message) + 1];
     strncpy(copyMessage, message, strlen(message));
     copyMessage[strlen(message)] = '\0';
@@ -405,12 +405,14 @@ int send_command(ChessGame *game, const char *message, int socketfd, bool is_cli
         ptr++;
         end++;
     }
+    
     end--;
     char command[end - start + 2];
     spliceString(copyMessage, start, end, command);
-
     if (strcmp(command, "/forfeit") == 0){
-        if (send(socketfd, message, sizeof(message), is_client)) return COMMAND_FORFEIT;
+        printf("%s\n", message);
+        send(socketfd, message, strlen(message), 0);
+        return COMMAND_FORFEIT;
     }
 
     if (strcmp(command, "/chessboard")  == 0){
@@ -430,10 +432,13 @@ int send_command(ChessGame *game, const char *message, int socketfd, bool is_cli
     spliceString(copyMessage, start, end, argument);
 
     if (strcmp(command, "/move") == 0){
+        
         ChessMove parsed_move;
         if (parse_move(argument, &parsed_move) == 0)
-            if (make_move(game, &parsed_move, is_client, 1) == 0)
+            if (make_move(game, &parsed_move, is_client, 1) == 0){
+                send(socketfd, message, strlen(message), 0);
                 return COMMAND_MOVE;
+            }
             else 
                 return COMMAND_ERROR;
         else
@@ -512,7 +517,6 @@ int receive_command(ChessGame *game, const char *message, int socketfd, bool is_
     end--;
     char command[end - start + 2];
     spliceString(copyMessage, start, end, command);
-
     if (strcmp(command, "/forfeit") == 0){
         close(socketfd);
         return COMMAND_FORFEIT;

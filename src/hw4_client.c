@@ -13,6 +13,7 @@ int main() {
     ChessGame game;
     int connfd = 0;
     struct sockaddr_in serv_addr;
+    char buffer[BUFFER_SIZE] = {0};
 
     // Connect to the server
     if ((connfd = socket(AF_INET, SOCK_STREAM, 0)) < 0) {
@@ -36,7 +37,66 @@ int main() {
     display_chessboard(&game);
 
     while (1) {
-        // Fill this in
+        memset(buffer, 0, BUFFER_SIZE);
+        fgets(buffer, BUFFER_SIZE, stdin);
+        buffer[strlen(buffer) - 1] = '\0';
+
+        printf("[Client] Message Entered: %s\n", buffer);
+
+        int value = send_command(&game, buffer, connfd, true);
+
+        while (value == COMMAND_ERROR || value == COMMAND_UNKNOWN || value == COMMAND_SAVE ){
+            memset(buffer, 0, BUFFER_SIZE);
+            fgets(buffer, BUFFER_SIZE, stdin);
+            buffer[strlen(buffer) - 1] = '\0';
+            printf("[Client] Message Entered: %s\n", buffer);
+            value = send_command(&game, buffer, connfd, true);
+        }
+
+        if (value == COMMAND_FORFEIT){
+            printf("[Client] Quitting...\n");
+            FILE *temp = fopen("./fen.txt", "w");
+            char fen[200];
+            chessboard_to_fen(fen, &game);
+            fprintf(temp, "%s", fen);
+            fclose(temp);
+            close(connfd);
+            if (game.currentPlayer == WHITE_PLAYER) 
+                game.currentPlayer = BLACK_PLAYER;
+            else 
+                game.currentPlayer = WHITE_PLAYER;
+            return 0;
+        }
+
+        memset(buffer, 0, BUFFER_SIZE);
+        int nbytes = read(connfd, buffer, BUFFER_SIZE);
+
+        if (nbytes <= 0 ){
+            perror("[Client] read() failed.");
+            FILE *temp = fopen("./fen.txt", "w");
+            char fen[200];
+            chessboard_to_fen(fen, &game);
+            fprintf(temp, "%s", fen);
+            fclose(temp);
+            close(connfd);
+            return 0;
+        }
+
+        printf("[Client] Received from the server: %s\n", buffer);
+        
+        value = receive_command(&game, buffer, connfd, false);
+
+        if (value == COMMAND_FORFEIT){
+            printf("[Client] Server chatter quitting...\n");
+            FILE *temp = fopen("./fen.txt", "w");
+            char fen[200];
+            chessboard_to_fen(fen, &game);
+            fprintf(temp, "%s", fen);
+            fclose(temp);
+            close(connfd);
+            return 0;
+        }
+        
     }
 
     // Please ensure that the following lines of code execute just before your program terminates.
