@@ -598,6 +598,11 @@ int save_game(ChessGame *game, const char *username, const char *db_filename) {
 
     FILE *filePtr = fopen(db_filename, "a");
 
+    if (filePtr == NULL){
+        fclose(filePtr);
+        return -1;
+    }
+
 
     char fenString[BUFFER_SIZE];
     chessboard_to_fen(fenString, game);
@@ -606,6 +611,12 @@ int save_game(ChessGame *game, const char *username, const char *db_filename) {
     strcpy(fullString, username);
     strcat(fullString, ":");
     strcat(fullString, fenString);
+
+    if (fprintf(filePtr, "%s\n", fullString) < 0){
+        fclose(filePtr);
+        return -1;
+    }
+
     
     fclose(filePtr);
     return 0;
@@ -614,11 +625,6 @@ int save_game(ChessGame *game, const char *username, const char *db_filename) {
 int load_game(ChessGame *game, const char *username, const char *db_filename, int save_number) {
     if (save_number == 0)
         return -1;
-
-    for(int i = 0; i < (int)strlen(username); i++){
-        if (username[i] == ' ')
-            return -1;
-    }
 
     FILE *read = fopen(db_filename, "r");
 
