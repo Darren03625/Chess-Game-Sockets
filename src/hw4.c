@@ -598,7 +598,6 @@ int save_game(ChessGame *game, const char *username, const char *db_filename) {
 
     FILE *filePtr = fopen(db_filename, "a");
 
-
     char fenString[BUFFER_SIZE];
     chessboard_to_fen(fenString, game);
 
@@ -639,6 +638,7 @@ int load_game(ChessGame *game, const char *username, const char *db_filename, in
     }
 
     rewind(read);
+    numGamesSaved = 0;
 
     while (fgets(fenString, sizeof(fenString), read) != NULL){
 
