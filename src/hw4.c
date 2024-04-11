@@ -591,9 +591,6 @@ int save_game(ChessGame *game, const char *username, const char *db_filename) {
     if (strcmp("", username) == 0)
         return -1;
         
-    if (strlen(username) == 0)
-        return -1;
-
     for(int i = 0; i < (int)strlen(username); i++){
         if (username[i] == ' ')
             return -1;
