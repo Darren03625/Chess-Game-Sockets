@@ -612,7 +612,10 @@ int save_game(ChessGame *game, const char *username, const char *db_filename) {
     strcat(fullString, ":");
     strcat(fullString, fenString);
 
-    fprintf(filePtr, "%s\n", fullString);
+    if (fprintf(filePtr, "%s\n", fullString) < 0){
+        fclose(filePtr);
+        return -1;
+    }
 
     
     fclose(filePtr);
