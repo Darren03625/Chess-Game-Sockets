@@ -598,25 +598,13 @@ int save_game(ChessGame *game, const char *username, const char *db_filename) {
 
     FILE *filePtr = fopen(db_filename, "a");
 
-    if (filePtr == NULL){
-        fclose(filePtr);
-        return -1;
-    }
-
 
     char fenString[BUFFER_SIZE];
     chessboard_to_fen(fenString, game);
 
-    char fullString[BUFFER_SIZE];
-    strcpy(fullString, username);
-    strcat(fullString, ":");
-    strcat(fullString, fenString);
-
-    if (fprintf(filePtr, "%s\n", fullString) < 0){
-        fclose(filePtr);
-        return -1;
-    }
-
+    fprintf(filePtr, "%s", username); 
+    fprintf(filePtr, ":");
+    fprintf(filePtr, "%s\n", fenString);
     
     fclose(filePtr);
     return 0;
