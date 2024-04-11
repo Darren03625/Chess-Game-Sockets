@@ -590,7 +590,7 @@ int receive_command(ChessGame *game, const char *message, int socketfd, bool is_
 int save_game(ChessGame *game, const char *username, const char *db_filename) {
     if (strcmp("", username) == 0)
         return -1;
-        
+
     for(int i = 0; i < (int)strlen(username); i++){
         if (username[i] == ' ')
             return -1;
@@ -626,6 +626,11 @@ int load_game(ChessGame *game, const char *username, const char *db_filename, in
     if (save_number == 0)
         return -1;
 
+    for(int i = 0; i < (int)strlen(username); i++){
+        if (username[i] == ' ')
+            return -1;
+    }
+    
     FILE *read = fopen(db_filename, "r");
 
     char fenString[BUFFER_SIZE];
